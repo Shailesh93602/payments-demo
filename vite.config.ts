@@ -1,0 +1,54 @@
+import { defineConfig, loadEnv } from "vite";
+import react from "@vitejs/plugin-react";
+import eslint from "vite-plugin-eslint";
+import istanbul from "vite-plugin-istanbul";
+
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), "VITE");
+  return {
+    // expose all vite "VITE_*" variables as process.env.VITE_* in the browser
+    define: {
+      "process.env": env,
+    },
+    server: {
+      port: 3000,
+      // 127.0.0.1 + allowedHosts: reachable through a tunnel that forwards to this one port
+      host: "127.0.0.1",
+      allowedHosts: [".tunl.contextqa.ai", ".tunl.contextqa.info", ".trycloudflare.com"],
+      proxy: {
+        "/api": {
+          target: `http://127.0.0.1:${env.VITE_BACKEND_PORT}`,
+          rewrite: (path) => path.replace(/^\/api/, ""),
+        },
+      },
+    },
+    build: {
+      outDir: "build",
+      sourcemap: true,
+    },
+    plugins: [
+      react(),
+      eslint(),
+      istanbul({
+        requireEnv: true,
+        exclude: ["node_modules", "dist"],
+        forceBuildInstrument: true,
+      }),
+    ],
+    // to get aws amplify to work with vite
+    resolve: {
+      alias: [
+        {
+          find: "./runtimeConfig",
+          replacement: "./runtimeConfig.browser", // ensures browser compatible version of AWS JS SDK is used
+        },
+      ],
+    },
+    test: {
+      environment: "jsdom",
+      setupFiles: "./src/setup-tests.js",
+      exclude: ["node_modules", "dist"],
+      fileParallelism: false, // #1666: Run tests sequentially to avoid race conditions with shared database.json file.
+    },
+  };
+});
