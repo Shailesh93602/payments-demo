@@ -159,10 +159,12 @@ const TransactionCreateStepTwo: React.FC<TransactionCreateStepTwoProps> = ({
                 onClose={() => setPendingPayment(undefined)}
                 data-test="transaction-create-confirm-dialog"
               >
-                <DialogTitle>
-                  Send {formatAmount(Math.round(Number(pendingPayment?.amount) * 100))} to{" "}
-                  {receiver.firstName} {receiver.lastName}?
-                </DialogTitle>
+                {pendingPayment && (
+                  <DialogTitle>
+                    Send {formatAmount(Math.round(Number(pendingPayment.amount) * 100))} to{" "}
+                    {receiver.firstName} {receiver.lastName}?
+                  </DialogTitle>
+                )}
                 <DialogActions>
                   <Button
                     data-test="transaction-create-confirm-cancel"
