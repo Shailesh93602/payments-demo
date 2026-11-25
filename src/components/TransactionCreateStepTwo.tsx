@@ -3,8 +3,23 @@ import { styled } from "@mui/material/styles";
 import NumberFormat from "react-number-format";
 import { Formik, Form, Field, FieldProps } from "formik";
 import { string, object, number } from "yup";
-import { Paper, Typography, Button, Grid, Container, Avatar, Box, TextField } from "@mui/material";
+import {
+  Paper,
+  Typography,
+  Button,
+  Grid,
+  Container,
+  Avatar,
+  Box,
+  TextField,
+  Dialog,
+  DialogTitle,
+  DialogActions,
+} from "@mui/material";
 import { User } from "../models";
+import { formatAmount } from "../utils/transactionUtils";
+
+const LARGE_PAYMENT_THRESHOLD = 500;
 
 const PREFIX = "TransactionCreateStepTwo";
 
@@ -86,6 +101,7 @@ const TransactionCreateStepTwo: React.FC<TransactionCreateStepTwoProps> = ({
   showSnackbar,
 }) => {
   const [transactionType, setTransactionType] = useState<string>();
+  const [pendingPayment, setPendingPayment] = useState<FormValues>();
   const initialValues: FormValues = {
     amount: "",
     description: "",
@@ -114,6 +130,16 @@ const TransactionCreateStepTwo: React.FC<TransactionCreateStepTwoProps> = ({
           validationSchema={validationSchema}
           validateOnMount={true}
           onSubmit={(values, { setSubmitting }) => {
+            if (
+              transactionType === "payment" &&
+              !pendingPayment &&
+              Number(values.amount) > LARGE_PAYMENT_THRESHOLD
+            ) {
+              setPendingPayment(values);
+              setSubmitting(false);
+              return;
+            }
+            setPendingPayment(undefined);
             setSubmitting(true);
 
             // reset transactionType
@@ -126,8 +152,34 @@ const TransactionCreateStepTwo: React.FC<TransactionCreateStepTwoProps> = ({
             });
           }}
         >
-          {({ isValid, isSubmitting }) => (
+          {({ isValid, isSubmitting, submitForm }) => (
             <Form className={classes.form} data-test="transaction-create-form">
+              <Dialog
+                open={Boolean(pendingPayment)}
+                onClose={() => setPendingPayment(undefined)}
+                data-test="transaction-create-confirm-dialog"
+              >
+                <DialogTitle>
+                  Send {formatAmount(Math.round(Number(pendingPayment?.amount) * 100))} to{" "}
+                  {receiver.firstName} {receiver.lastName}?
+                </DialogTitle>
+                <DialogActions>
+                  <Button
+                    data-test="transaction-create-confirm-cancel"
+                    onClick={() => setPendingPayment(undefined)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    data-test="transaction-create-confirm-submit"
+                    onClick={submitForm}
+                  >
+                    Confirm
+                  </Button>
+                </DialogActions>
+              </Dialog>
               <Field name="amount">
                 {({ field, meta: { error, value, initialValue, touched } }: FieldProps) => (
                   <TextField
