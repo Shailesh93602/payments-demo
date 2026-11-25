@@ -3,8 +3,23 @@ import { styled } from "@mui/material/styles";
 import NumberFormat from "react-number-format";
 import { Formik, Form, Field, FieldProps } from "formik";
 import { string, object, number } from "yup";
-import { Paper, Typography, Button, Grid, Container, Avatar, Box, TextField } from "@mui/material";
+import {
+  Paper,
+  Typography,
+  Button,
+  Grid,
+  Container,
+  Avatar,
+  Box,
+  TextField,
+  Dialog,
+  DialogActions,
+  DialogTitle,
+} from "@mui/material";
 import { User } from "../models";
+import { formatAmount } from "../utils/transactionUtils";
+
+const CONFIRM_PAYMENT_OVER = 500;
 
 const PREFIX = "TransactionCreateStepTwo";
 
@@ -86,11 +101,23 @@ const TransactionCreateStepTwo: React.FC<TransactionCreateStepTwoProps> = ({
   showSnackbar,
 }) => {
   const [transactionType, setTransactionType] = useState<string>();
+  const [pendingPayment, setPendingPayment] = useState<FormValues>();
   const initialValues: FormValues = {
     amount: "",
     description: "",
     senderId: sender.id,
     receiverId: receiver.id,
+  };
+
+  const submitTransaction = (type: string | undefined, values: FormValues) => {
+    // reset transactionType
+    setTransactionType(undefined);
+
+    createTransaction({ transactionType: type, ...values });
+    showSnackbar({
+      severity: "success",
+      message: "Transaction Submitted!",
+    });
   };
 
   return (
@@ -114,16 +141,12 @@ const TransactionCreateStepTwo: React.FC<TransactionCreateStepTwoProps> = ({
           validationSchema={validationSchema}
           validateOnMount={true}
           onSubmit={(values, { setSubmitting }) => {
-            setSubmitting(true);
-
-            // reset transactionType
-            setTransactionType(undefined);
-
-            createTransaction({ transactionType, ...values });
-            showSnackbar({
-              severity: "success",
-              message: "Transaction Submitted!",
-            });
+            if (transactionType === "payment" && Number(values.amount) > CONFIRM_PAYMENT_OVER) {
+              setPendingPayment(values);
+              setSubmitting(false);
+              return;
+            }
+            submitTransaction(transactionType, values);
           }}
         >
           {({ isValid, isSubmitting }) => (
@@ -207,6 +230,37 @@ const TransactionCreateStepTwo: React.FC<TransactionCreateStepTwoProps> = ({
           )}
         </Formik>
       </Container>
+      <Dialog
+        open={Boolean(pendingPayment)}
+        onClose={() => setPendingPayment(undefined)}
+        data-test="transaction-confirm-dialog"
+      >
+        {pendingPayment && (
+          <DialogTitle data-test="transaction-confirm-dialog-title">
+            Send {formatAmount(Math.round(Number(pendingPayment.amount) * 100))} to{" "}
+            {receiver.firstName} {receiver.lastName}?
+          </DialogTitle>
+        )}
+        <DialogActions>
+          <Button
+            onClick={() => setPendingPayment(undefined)}
+            data-test="transaction-confirm-cancel"
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => {
+              submitTransaction("payment", pendingPayment!);
+              setPendingPayment(undefined);
+            }}
+            data-test="transaction-confirm-submit"
+          >
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
     </StyledPaper>
   );
 };
