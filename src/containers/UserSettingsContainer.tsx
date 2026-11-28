@@ -6,6 +6,7 @@ import { Interpreter } from "xstate";
 import { AuthMachineContext, AuthMachineEvents } from "../machines/authMachine";
 import { useActor } from "@xstate/react";
 import PersonalSettingsIllustration from "../components/SvgUndrawPersonalSettingsKihd";
+import { formatMemberSince } from "../utils/memberSince";
 
 const PREFIX = "UserSettingsContainer";
 
@@ -37,6 +38,16 @@ const UserSettingsContainer: React.FC<Props> = ({ authService }) => {
       <Typography component="h2" variant="h6" color="primary" gutterBottom>
         User Settings
       </Typography>
+      {currentUser?.createdAt && (
+        <Typography
+          variant="body2"
+          color="textSecondary"
+          gutterBottom
+          data-test="user-settings-member-since"
+        >
+          {formatMemberSince(currentUser.createdAt)}
+        </Typography>
+      )}
       <Grid
         container
         spacing={2}
