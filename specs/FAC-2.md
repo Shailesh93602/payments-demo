@@ -14,3 +14,13 @@ The My Account page (User Settings) shows the signed-in user's join month and ye
 - Showing the join date anywhere else (profile, sidebar, other users).
 - Showing the day or time of joining.
 - Any change to the data stored for a user.
+
+## ContextQA tests (requirement 448, suite 210, plan 210, env payments-factory)
+
+| Criterion | Test case | Status | Result on this branch |
+|---|---|---|---|
+| AC-1 | 1199 Verify Member Since Date Display on My Account Page | kept | passed (plan run 958) |
+| AC-2 | 1200 Verify Member Since Date Format Strictly Displays Month and Year | kept | passed (plan run 958) |
+| AC-3 | 1201 Verify Saving Unchanged Settings Form Retains Data Without Validation Errors | kept | passed (plan run 958) |
+
+Discarded drafts: 2022 (field pre-population, overlaps 1201) and 2024 (end-to-end journey repeating 1199 to 1201). Gaps: none.
